@@ -1,4 +1,4 @@
-package com.nbp.currency_value_getter;
+package com.lm.currency.app;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

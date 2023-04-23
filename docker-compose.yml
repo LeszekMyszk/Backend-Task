@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+  currency-application:
+    build: .
+    container_name: currency-application
+    restart: on-failure
+    ports:
+      - "8080:8080"
+#    environment:
+#      - "DBHOST=conference-database"
+
+

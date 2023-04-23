@@ -1,4 +1,4 @@
-package com.nbp.currency_value_getter;
+package com.lm.currency.app; //TODO pl.lmyszk.currencyservice
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
