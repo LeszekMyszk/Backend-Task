@@ -2,6 +2,7 @@ package com.lm.currency.app.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.lm.currency.app.model.CurrencyValueDTO;
+import com.lm.currency.app.model.MaxDifferenceDTO;
 import com.lm.currency.app.model.MinAndMaxValueDTO;
 import com.lm.currency.app.webclient.NBPClient;
 import org.springframework.stereotype.Service;
@@ -22,18 +23,18 @@ public class CurrencyService {
         return nbpClient.getCurrencyValue(code, date);
     }
 
-    public String getMinAndMaxValueFromNQuotations(String code, int topCount) {
+    public MinAndMaxValueDTO getMinAndMaxValueFromNQuotations(String code, int topCount) {
         // TODO ADD SANITIZE / VERIFY (normal or bean validation)
         return nbpClient.getMinAndMaxValue(code, topCount);
     }
 
-    public String getMaxDifferenceBetweenBuyAndAsk(String code, int topCount) {
+    public MaxDifferenceDTO getMaxDifferenceBetweenBuyAndAsk(String code, int topCount) {
         // TODO ADD SANITIZE / VERIFY (normal or bean validation)
         return nbpClient.getMaxDifference(code, topCount);
     }
 }
 
-/*
+/*//TODO delete comments below
     Provide a separate endpoint for each operation:
 
         1) Given a date (formatted YYYY-MM-DD) and a currency code (list: https://nbp.pl/en/statistic-and-financial-reporting/rates/table-a/), provide its average exchange rate.

@@ -1,83 +1,74 @@
 package com.lm.currency.app.webclient;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.json.JsonReadContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.util.JSONPObject;
-import com.lm.currency.app.model.CurrencyDTO;
-import com.lm.currency.app.model.CurrencyValueDTO;
-import com.lm.currency.app.model.MinAndMaxValueDTO;
+import com.lm.currency.app.model.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.LocalDate;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 @Component
 public class NBPClient {
 
     private String url = "{HTTP_NBP_URL}/{table}/{code}/{date}/";
     private static final String HTTP_NBP_URL = "http://api.nbp.pl/api/exchangerates/rates";
-//    Map<String, String> urlParams = new HashMap<>();
-//    urlParams.put("HTTP_NBP_URL", "http://api.nbp.pl/api/exchangerates/rates");
-//    urlParams.put("table", "a");
-//    urlParams.put("code", "a");
 
-//    UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(url);
     private RestTemplate restTemplate = new RestTemplate();
 
-//    public String getCurrencyValue(String code, LocalDate date) {
-//        return restTemplate.getForObject(HTTP_NBP + "/{table}/{code}/{date}/", String.class, "a", code, date);
-//
-//    }
 
     public CurrencyValueDTO getCurrencyValue(String code, LocalDate date) throws JsonProcessingException {
         String jsonCurrency = callGetMethod("/a/{code}/{date}/",
                 String.class,
-                code, date); // TODO EXCEPTION HANDLING
-        // RESPONSE OPTIONAL OR THROW ERROR
+                code, date); // TODO EXCEPTION HANDLING, RESPONSE OPTIONAL OR THROW ERROR
 
         System.out.println(jsonCurrency);
         ObjectMapper mapper = new ObjectMapper();
-        CurrencyDTO currencyDTO = mapper.readValue(jsonCurrency, CurrencyDTO.class);
-        return new CurrencyValueDTO(currencyDTO.getRates().get(0).getMid());
-        //return currencyValueDto.setMid(currencyDto.getRates().stream().findFirst().get().getMid());
+        CurrencyAverageDTO currencyAverageDTO = mapper.readValue(jsonCurrency, CurrencyAverageDTO.class);
+        return new CurrencyValueDTO(currencyAverageDTO.getRates().get(0).getMid());
     }
 
-    public String getMinAndMaxValue(String code, int topCount) {
-        String jsonLastQuotationsList = callGetMethod("/a/{code}/last/{topCount}/",
-                String.class,
-                code, topCount); // TODO EXCEPTION HANDLING
-        // RESPONSE OPTIONAL OR THROW ERROR
-//        JsonReadContex
-        System.out.println(jsonLastQuotationsList);
-//        ObjectMapper mapper = new ObjectMapper();
-//        List<CurrencyValueDTO> currencyValueDTOList = mapper.readValue(jsonLastQuotationsList, CurrencyValueDTO.class);
-        return jsonLastQuotationsList;
+    public MinAndMaxValueDTO getMinAndMaxValue(String code, int topCount) {
+        CurrencyAverageDTO currencyAverageDTO = callGetMethod("/a/{code}/last/{topCount}/",
+                CurrencyAverageDTO.class,
+                code, topCount); // TODO EXCEPTION HANDLING, RESPONSE OPTIONAL OR THROW ERROR
+        List<CurrencyAverageRatesDTO> currencyAverageRatesDTOList = currencyAverageDTO.getRates();
+        List<Double> averageRateList = currencyAverageRatesDTOList.stream().map(CurrencyAverageRatesDTO::getMid).toList();
+        Double minValue = Collections.min(averageRateList);
+        Double maxValue = Collections.max(averageRateList);
+        return MinAndMaxValueDTO.builder()
+                .minExchangeRateValue(minValue)
+                .maxExchangeRateValue(maxValue)
+                .build();
     }
 
 
-    public String getMaxDifference(String code, int topCount) {
-        String jsonLastQuotationsList = callGetMethod("/c/{code}/last/{topCount}/",
-                String.class,
-                code, topCount); // TODO EXCEPTION HANDLING
-//        JsonReadContext
-        // RESPONSE OPTIONAL OR THROW ERROR
-
-        System.out.println(jsonLastQuotationsList);
-//        ObjectMapper mapper = new ObjectMapper();
-//        List<CurrencyValueDTO> currencyValueDTOList = mapper.readValue(jsonLastQuotationsList, CurrencyValueDTO.class);
-        return jsonLastQuotationsList;
+    public MaxDifferenceDTO getMaxDifference(String code, int topCount) {
+        CurrencyBuyAndAskDTO currencyBuyAndAskDTO = callGetMethod("/c/{code}/last/{topCount}/",
+                CurrencyBuyAndAskDTO.class,
+                code, topCount); // TODO EXCEPTION HANDLING, RESPONSE OPTIONAL OR THROW ERROR
+        List<CurrencyBuyAndAskRatesDTO> currencyBuyAndAskRatesDTOList = currencyBuyAndAskDTO.getRates();
+        List<Double> askRateList = currencyBuyAndAskRatesDTOList.stream().map(CurrencyBuyAndAskRatesDTO::getAsk).toList();
+        List<Double> bidRateList = currencyBuyAndAskRatesDTOList.stream().map(CurrencyBuyAndAskRatesDTO::getBid).toList();
+        List<Double> differenceBidAndAskRateList = new ArrayList<>();
+        for (int i = 0; i < askRateList.size(); i++) {
+            differenceBidAndAskRateList.add(Math.round((askRateList.get(i) - bidRateList.get(i)) * 10000.0) / 10000.0);
+        }
+        System.out.println(askRateList);
+        System.out.println(bidRateList);
+        System.out.println(differenceBidAndAskRateList);
+        Double maxDifference = Collections.max(differenceBidAndAskRateList);
+        return MaxDifferenceDTO.builder()
+                .maxDifferenceBuyAndAskRate(maxDifference)
+                .build();
     }
 
     private <T> T callGetMethod(String url, Class<T> responseType, Object... objects) {
-        // TODO USE URI BUILDER
         return restTemplate.getForObject(HTTP_NBP_URL + url, responseType, objects);
     }
-
 
 
 }

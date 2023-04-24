@@ -9,6 +9,12 @@ This is a runnable local server, that exposes some endpoints which take query da
 docker-compose up -d
 ```
 
+- To use swagger-ui for this service, go to:
+```
+http://localhost:8080/swagger-ui/index.html
+```
+
+
 ## How to use
 Consists of three separate endpoints for each operation:
 1. Given a date (formatted YYYY-MM-DD) and a currency code (list: https://nbp.pl/en/statistic-and-financial-reporting/rates/table-a/), provide its average exchange rate.
