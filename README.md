@@ -18,19 +18,19 @@ http://localhost:8080/swagger-ui/index.html
 ## How to use
 Consists of three separate endpoints for each operation:
 1. Given a date (formatted YYYY-MM-DD) and a currency code (list: https://nbp.pl/en/statistic-and-financial-reporting/rates/table-a/), provide its average exchange rate.
-- To query operation, run this command (which should have the value 5.2768 as the returning information):
+- To query operation, run this command (which should have the value {"averageExchangeRate":4.1566} as the returning information):
 ```
-curl http://localhost:8080/exchanges/GBP/2023-01-02
+curl http://localhost:8080/api/v1/currency/USD/2020-04-10/
 ```
 2. Given a currency code and the number of last quotations N (N <= 255), provide the max and min average value (every day has a different average).
-- To query operation, run this command (which should have the value 5.2768 as the returning information):
+- To query operation, run this command (which should have the value like: {"minExchangeRateValue":4.1905,"maxExchangeRateValue":4.4911} (might change with every single day) as the returning information):
 ```
-curl http://localhost:8888/exchanges/GBP/2023-01-02
+curl http://localhost:8080/api/v1/currency/average/USD/last/100/
 ```
 3. Given a currency code and the number of last quotations N (N <= 255), provide the major difference between the buy and ask rate (every day has different rates).
-- To query operation, run this command (which should have the value 5.2768 as the returning information):
+- To query operation, run this command (which should have the value like: {"maxDifferenceBuyAndAskRate":0.0898} (might change with every single day) as the returning information):
 ```
-curl http://localhost:8888/exchanges/GBP/2023-01-02
+curl http://localhost:8080/api/v1/currency/BidAndAsk/USD/last/100/
 ```
 
 ## Additional

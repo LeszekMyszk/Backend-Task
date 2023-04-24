@@ -13,4 +13,7 @@ public class CurrencyAverageRatesDTO {
     private String no;
     private String effectiveDate;
     private double mid;
+
+    public CurrencyAverageRatesDTO(double v) {
+    }
 }

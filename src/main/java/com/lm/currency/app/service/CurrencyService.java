@@ -1,13 +1,18 @@
 package com.lm.currency.app.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.lm.currency.app.model.CurrencyValueDTO;
-import com.lm.currency.app.model.MaxDifferenceDTO;
-import com.lm.currency.app.model.MinAndMaxValueDTO;
+import com.lm.currency.app.exceptions.InvalidAmountOfQuotationsException;
+import com.lm.currency.app.exceptions.InvalidDateException;
+import com.lm.currency.app.model.*;
 import com.lm.currency.app.webclient.NBPClient;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Currency;
+import java.util.List;
 
 @Service
 public class CurrencyService {
@@ -18,39 +23,44 @@ public class CurrencyService {
         this.nbpClient = nbpClient;
     }
 
-    public CurrencyValueDTO getCurrencyValueAtDate(String code, LocalDate date) throws JsonProcessingException {
-        // TODO ADD SANITIZE / VERIFY (normal or bean validation)
-        return nbpClient.getCurrencyValue(code, date);
+
+    public CurrencyValueDTO getCurrencyValueAtDate(Currency code, LocalDate date) throws InvalidDateException {
+        if (date.plusDays(1).isAfter(LocalDate.now()) || date.plusYears(2).isBefore(LocalDate.now())) {
+            throw new InvalidDateException("You can access exchange rates in period from two years ago until yesterday.");
+        }
+        CurrencyAverageDTO currencyAverageDTO = nbpClient.getCurrencyValue(code, date);
+        List<Double> averageRateList = currencyAverageDTO.getRates().stream().map(CurrencyAverageRatesDTO::getMid).toList();
+        return CurrencyValueDTO.builder().averageExchangeRate(averageRateList.get(0)).build();
     }
 
-    public MinAndMaxValueDTO getMinAndMaxValueFromNQuotations(String code, int topCount) {
-        // TODO ADD SANITIZE / VERIFY (normal or bean validation)
-        return nbpClient.getMinAndMaxValue(code, topCount);
+
+    public MinAndMaxValueDTO getMinAndMaxValueFromNQuotations(Currency code, int topCount) throws InvalidAmountOfQuotationsException {
+        if (topCount > 255) {
+            throw new InvalidAmountOfQuotationsException("Max amount of quotations is 255.");
+        }
+        CurrencyAverageDTO currencyAverageDTO = nbpClient.getMinAndMaxAverageValue(code, topCount);
+        List<Double> averageRateList = currencyAverageDTO.getRates().stream().map(CurrencyAverageRatesDTO::getMid).toList();
+        Double minValue = Collections.min(averageRateList);
+        Double maxValue = Collections.max(averageRateList);
+        return MinAndMaxValueDTO.builder().minExchangeRateValue(minValue).maxExchangeRateValue(maxValue).build();
     }
 
-    public MaxDifferenceDTO getMaxDifferenceBetweenBuyAndAsk(String code, int topCount) {
-        // TODO ADD SANITIZE / VERIFY (normal or bean validation)
-        return nbpClient.getMaxDifference(code, topCount);
+
+    public MaxDifferenceDTO getMaxDifferenceBetweenBuyAndAsk(Currency code, int topCount) throws InvalidAmountOfQuotationsException {
+        if (topCount > 255) {
+            throw new InvalidAmountOfQuotationsException("Max amount of quotations is 255.");
+        }
+        CurrencyBuyAndAskDTO currencyBuyAndAskDTO = nbpClient.getMaxDifference(code, topCount);
+        List<Double> askRateList = currencyBuyAndAskDTO.getRates().stream().map(CurrencyBuyAndAskRatesDTO::getAsk).toList();
+        List<Double> bidRateList = currencyBuyAndAskDTO.getRates().stream().map(CurrencyBuyAndAskRatesDTO::getBid).toList();
+        List<Double> differenceBidAndAskRateList = new ArrayList<>();
+        for (int i = 0; i < askRateList.size(); i++) {
+            differenceBidAndAskRateList.add((askRateList.get(i) - bidRateList.get(i)));
+        }
+        BigDecimal maxDifference = BigDecimal.valueOf(Collections.max(differenceBidAndAskRateList)).setScale(4, RoundingMode.HALF_UP);
+        double maxDifferenceBuyAndAsk = maxDifference.doubleValue();
+        return MaxDifferenceDTO.builder()
+                .maxDifferenceBuyAndAskRate(maxDifferenceBuyAndAsk)
+                .build();
     }
 }
-
-/*//TODO delete comments below
-    Provide a separate endpoint for each operation:
-
-        1) Given a date (formatted YYYY-MM-DD) and a currency code (list: https://nbp.pl/en/statistic-and-financial-reporting/rates/table-a/), provide its average exchange rate.
-            URL: "http://api.nbp.pl/api/exchangerates/rates/a/gbp/2012-01-02/"
-            return: value
-
-
-        2) Given a currency code and the number of last quotations N (N <= 255), provide the max and min average value (every day has a different average).
-            URL: "http://api.nbp.pl/api/exchangerates/rates/{table}/{code}/last/{topCount}/"
-            validation: N <= 255
-            return: min and max value
-
-
-        3) Given a currency code and the number of last quotations N (N <= 255), provide the major difference between the buy and ask rate (every day has different rates).
-            URL: "http://api.nbp.pl/api/exchangerates/rates/c/usd/last/10/?format=json"
-            validation: N <= 255
-            check differences between bid and ask
-            return: max difference
- */

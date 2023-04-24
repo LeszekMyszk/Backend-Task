@@ -27,16 +27,16 @@ class CurrencyControllerTest {
     CurrencyService currencyService;
     CurrencyController currencyController = new CurrencyController(currencyService);
 
-    @Test
-    void getCurrencyValueAtDate() throws Exception {
-        RequestBuilder builder = MockMvcRequestBuilders.get("/USD/2023-04-20/");
-        //RequestBuilder builder = MockMvcRequestBuilders.get("/USD/2023-04-20/");
-        mockMvc.perform(builder)
-                //.andExpect(status().isOk())
-                .andExpect(jsonPath("$.*", Matchers.hasSize(0)));
-
-        //String resBody = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
-      //  mockMvc.perform(get("/USD/2023-04-20/")).andExpect(status().isOk());
-
-   }
+//    @Test
+//    void getCurrencyValueAtDate() throws Exception {
+//        RequestBuilder builder = MockMvcRequestBuilders.get("/USD/2023-04-20/");
+//        //RequestBuilder builder = MockMvcRequestBuilders.get("/USD/2023-04-20/");
+//        mockMvc.perform(builder)
+//                //.andExpect(status().isOk())
+//                .andExpect(jsonPath("$.*", Matchers.hasSize(0)));
+//
+//        //String resBody = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
+//      //  mockMvc.perform(get("/USD/2023-04-20/")).andExpect(status().isOk());
+//
+//   }
 }

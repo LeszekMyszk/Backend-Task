@@ -1,25 +1,24 @@
 package com.lm.currency.app.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Setter
 public class CurrencyAverageDTO {
-    @JsonProperty("table")
     private String table;
-    @JsonProperty("currency")
     private String currency;
-    @JsonProperty("code")
     private String code;
-    @JsonProperty("rates")
     private List<CurrencyAverageRatesDTO> rates;
 
+    public CurrencyAverageDTO(List<CurrencyAverageRatesDTO> rates) {
+    }
 }
 
 //TODO delete comments below
