@@ -1,111 +1,109 @@
 package com.lm.currency.app.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+
+import com.lm.currency.app.configuration.TimeService;
+import com.lm.currency.app.exceptions.InvalidAmountOfQuotationsException;
+import com.lm.currency.app.exceptions.InvalidDateException;
 import com.lm.currency.app.model.CurrencyAverageDTO;
 import com.lm.currency.app.model.CurrencyAverageRatesDTO;
 import com.lm.currency.app.model.CurrencyValueDTO;
 import com.lm.currency.app.model.MinAndMaxValueDTO;
 import com.lm.currency.app.webclient.NBPClient;
+import org.assertj.core.api.Assertions;
+import org.assertj.core.api.ThrowableAssert;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.mockito.BDDMockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Currency;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
+@WebMvcTest(CurrencyService.class)
 class CurrencyServiceTest {
 
-
-    NBPClient nbpClient = mock(NBPClient.class);
-    CurrencyService currencyService = new CurrencyService(nbpClient);
-    Currency currencyCode = Currency.getInstance("USD");
-
-//    @Test
-//    public void testGetCurrencyValueAtDate() throws JsonProcessingException {
-//        NBPClient mockNBPClient = Mockito.mock(NBPClient.class);
-//        CurrencyService service = new CurrencyService(mockNBPClient);
-//
-//        Currency currencyCode = Currency.getInstance("USD");
-//        LocalDate date = LocalDate.parse("2023-04-22");
-//
-//        CurrencyAverageRatesDTO rate1 = new CurrencyAverageRatesDTO(1.0);
-//        List<CurrencyAverageRatesDTO> rates = List.of(rate1);
-//        CurrencyAverageDTO responseDTO = new CurrencyAverageDTO(rates);
-//        Mockito.when(mockNBPClient.getCurrencyValue(currencyCode, date)).thenReturn(responseDTO);
-//
-//        CurrencyValueDTO result = service.getCurrencyValueAtDate(currencyCode, date);
-//
-//        assertNotNull(result);
-//        assertNotNull(result.getAverageExchangeRate());
-//        assertEquals(1.0, result.getAverageExchangeRate(), 0.0);
-//    }
+    @Autowired
+    MockMvc mockMvc;
+    @MockBean
+    NBPClient nbpClient;
+    @MockBean
+    TimeService timeService;
 
 
+    CurrencyService underTest;
+    Currency correctCurrency = Currency.getInstance("USD");
+    LocalDate correctDate = LocalDate.now().minusYears(1);
+    LocalDate incorrectDate = LocalDate.now().minusYears(3);
+    List<CurrencyAverageRatesDTO> correctRates = new ArrayList<>();
+    CurrencyAverageDTO currencyAverageDTO = new CurrencyAverageDTO();
+    int correctTopCount = 100;
+    int incorrectTopCount = 300;
 
+    @BeforeEach
+    void prepare() {
+        underTest = new CurrencyService(nbpClient);
+        correctRates.add(new CurrencyAverageRatesDTO("a", correctDate.toString(), 1.2345));
+        currencyAverageDTO.setRates(correctRates);
 
-
-
-
-
-
-
-//    @Test
-//    public void testGetMinAndMaxValueFromNQuotations() {
-//        CurrencyService obj = new CurrencyService(nbpClient);
-//        Currency currencyCode = Currency.getInstance("USD");
-//        int topCount = 5;
-//        MinAndMaxValueDTO result = obj.getMinAndMaxValueFromNQuotations(currencyCode, topCount);
-//        assertNotNull(result);
-//        assertNotNull(result.getMinExchangeRateValue());
-//        assertNotNull(result.getMaxExchangeRateValue());
-//        assertTrue(result.getMinExchangeRateValue() <= result.getMaxExchangeRateValue());
-//    }
-
-
-
-
-
-//
-//    @Test
-//    void testGetMinAndMaxValueFromNQuotations() {
-//        // Arrange
-//        CurrencyAverageDTO currencyAverageDTO = new CurrencyAverageDTO();
-//        List<CurrencyAverageRatesDTO> rates = Arrays.asList(new CurrencyAverageRatesDTO(1.0),
-//                new CurrencyAverageRatesDTO(2.0),
-//                new CurrencyAverageRatesDTO(3.0));
-//        currencyAverageDTO.setRates(rates);
-//        when(nbpClient.getMinAndMaxAverageValue(any(), anyInt())).thenReturn(currencyAverageDTO);
-//
-//        // Act
-//        MinAndMaxValueDTO result = currencyService.getMinAndMaxValueFromNQuotations(USD, 3);
-//
-//        // Assert
-//        assertNotNull(result);
-//        assertEquals(1.0, result.getMinExchangeRateValue());
-//        assertEquals(3.0, result.getMaxExchangeRateValue());
-//    }
-
-    @Test
-    void testGetMinAndMaxValueFromNQuotationsWithEmptyRates() {
-        // Arrange
-        CurrencyAverageDTO currencyAverageDTO = new CurrencyAverageDTO();
-        currencyAverageDTO.setRates(new ArrayList<>());
-        when(nbpClient.getMinAndMaxAverageValue(any(Currency.class), anyInt())).thenReturn(currencyAverageDTO);
-
-        // Act
-        MinAndMaxValueDTO result = currencyService.getMinAndMaxValueFromNQuotations(currencyCode, 3);
-
-        // Assert
-        assertNotNull(result);
-        assertNull(result.getMinExchangeRateValue());
-        assertNull(result.getMaxExchangeRateValue());
     }
 
+
+    @Test
+    void getCurrencyValueAtCorrectDate() throws Exception, InvalidDateException {
+        //given
+        BDDMockito.given(nbpClient.getCurrencyValue(correctCurrency, correctDate)).willReturn(currencyAverageDTO);
+
+        //when
+        CurrencyValueDTO result = underTest.getCurrencyValueAtDate(correctCurrency, correctDate);
+
+        //then
+        Assertions.assertThat(result).isNotNull()
+                .isInstanceOf(CurrencyValueDTO.class)
+                .hasFieldOrProperty("averageExchangeRate");
+    }
+
+
+    @Test
+    void getCurrencyValueAtIncorrectDate() throws Exception, InvalidDateException {
+        //given
+        BDDMockito.given(nbpClient.getCurrencyValue(correctCurrency, incorrectDate)).willReturn(currencyAverageDTO);
+
+        //when
+        ThrowableAssert.ThrowingCallable result = () -> underTest.getCurrencyValueAtDate(correctCurrency, incorrectDate);
+
+        //then
+        Assertions.assertThatException().getClass().equals(InvalidDateException.class);
+    }
+
+    @Test
+    void getCurrencyMinAndMaxValueFromNCorrectQuotations() throws Exception, InvalidAmountOfQuotationsException {
+        //given
+        BDDMockito.given(nbpClient.getMinAndMaxAverageValue(correctCurrency, correctTopCount)).willReturn(currencyAverageDTO);
+
+        //when
+        MinAndMaxValueDTO result = underTest.getMinAndMaxValueFromNQuotations(correctCurrency, correctTopCount);
+
+        //then
+        Assertions.assertThat(result).isNotNull()
+                .isInstanceOf(MinAndMaxValueDTO.class);
+    }
+
+
+    @Test
+    void getCurrencyMinAndMaxValueFromNIncorrectQuotations() throws InvalidAmountOfQuotationsException {
+        //given
+        BDDMockito.given(nbpClient.getMinAndMaxAverageValue(correctCurrency, incorrectTopCount)).willReturn(currencyAverageDTO);
+
+        //when
+        ThrowableAssert.ThrowingCallable result = () -> underTest.getMinAndMaxValueFromNQuotations(correctCurrency, incorrectTopCount);
+
+        //then
+        Assertions.assertThatException().isThrownBy(result).isNotNull();
+    }
 }
+

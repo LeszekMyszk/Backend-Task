@@ -1,42 +1,51 @@
 package com.lm.currency.app.controller;
 
+
+import com.lm.currency.app.configuration.TimeService;
 import com.lm.currency.app.service.CurrencyService;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assertions;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.RequestBuilder;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import java.util.logging.Logger;
-
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(CurrencyController.class)
 class CurrencyControllerTest {
 
     @Autowired
     MockMvc mockMvc;
     @MockBean
     CurrencyService currencyService;
-    CurrencyController currencyController = new CurrencyController(currencyService);
+    @MockBean
+    TimeService timeService;
 
-//    @Test
-//    void getCurrencyValueAtDate() throws Exception {
-//        RequestBuilder builder = MockMvcRequestBuilders.get("/USD/2023-04-20/");
-//        //RequestBuilder builder = MockMvcRequestBuilders.get("/USD/2023-04-20/");
-//        mockMvc.perform(builder)
-//                //.andExpect(status().isOk())
-//                .andExpect(jsonPath("$.*", Matchers.hasSize(0)));
-//
-//        //String resBody = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
-//      //  mockMvc.perform(get("/USD/2023-04-20/")).andExpect(status().isOk());
-//
-//   }
+    @Test
+    void mockMvcNotEmpty() {
+        //given
+        //when
+        //then
+        Assertions.assertThat(mockMvc).isNotNull();
+    }
+
+
+    @Test
+    void givenCorrectCurrency() throws Exception {
+        //given
+        //when-then
+        mockMvc.perform(get("/api/v1/currency/USD/2022-04-28/"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void givenWrongCurrency() throws Exception {
+        //given
+        //when-then
+        mockMvc.perform(get("/api/v1/currency/USA/2022-04-28/"))
+                .andExpect(status().isBadRequest());
+    }
 }
+
