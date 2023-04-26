@@ -8,25 +8,24 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Currency;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class CurrencyService {
 
     private final NBPClient nbpClient;
-
     public CurrencyService(NBPClient nbpClient) {
         this.nbpClient = nbpClient;
     }
 
 
     public CurrencyValueDTO getCurrencyValueAtDate(Currency code, LocalDate date) throws InvalidDateException {
-        if (date.plusDays(1).isAfter(LocalDate.now()) || date.plusYears(2).isBefore(LocalDate.now())) {
-            throw new InvalidDateException("You can access exchange rates in period from two years ago until yesterday.");
+        if ((date.plusDays(1).isAfter(LocalDate.now()) || date.plusYears(2).isBefore(LocalDate.now()))
+                || (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY)) {
+
+            throw new InvalidDateException("You can access exchange rates on working days in period from two years ago until yesterday.");
         }
         CurrencyAverageDTO currencyAverageDTO = nbpClient.getCurrencyValue(code, date);
         List<Double> averageRateList = currencyAverageDTO.getRates().stream().map(CurrencyAverageRatesDTO::getMid).toList();
@@ -35,8 +34,10 @@ public class CurrencyService {
 
 
     public MinAndMaxValueDTO getMinAndMaxValueFromNQuotations(Currency code, int topCount) throws InvalidAmountOfQuotationsException {
-        if (topCount > 255) {
-            throw new InvalidAmountOfQuotationsException("Max amount of quotations is 255.");
+        int minQuotations = 1;
+        int maxQuotations = 255;
+        if ((topCount < minQuotations) || (topCount > maxQuotations)) {
+            throw new InvalidAmountOfQuotationsException("Amount of quotations should be between 1 and 255.");
         }
         CurrencyAverageDTO currencyAverageDTO = nbpClient.getMinAndMaxAverageValue(code, topCount);
         List<Double> averageRateList = currencyAverageDTO.getRates().stream().map(CurrencyAverageRatesDTO::getMid).toList();
@@ -47,7 +48,9 @@ public class CurrencyService {
 
 
     public MaxDifferenceDTO getMaxDifferenceBetweenBuyAndAsk(Currency code, int topCount) throws InvalidAmountOfQuotationsException {
-        if (topCount > 255) {
+        int minQuotations = 1;
+        int maxQuotations = 255;
+        if ((topCount < minQuotations) || (topCount > maxQuotations)) {
             throw new InvalidAmountOfQuotationsException("Max amount of quotations is 255.");
         }
         CurrencyBuyAndAskDTO currencyBuyAndAskDTO = nbpClient.getMaxDifference(code, topCount);

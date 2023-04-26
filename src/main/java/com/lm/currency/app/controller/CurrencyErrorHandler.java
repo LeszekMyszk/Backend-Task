@@ -28,6 +28,4 @@ public class CurrencyErrorHandler {
         ErrorMessage errorMessage = new ErrorMessage(timeService.get(), exception.getErrorInfo());
         return ResponseEntity.badRequest().body(errorMessage);
     }
-
-
 }
